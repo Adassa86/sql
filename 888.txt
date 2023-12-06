@@ -1,0 +1,132 @@
+
+-- Creation of the database
+CREATE DATABASE IF NOT EXISTS CustomerDatabase;
+USE CustomerDatabase;
+
+-- Creation of the Customer table
+CREATE TABLE Customer (
+    CustomerID INT PRIMARY KEY AUTO_INCREMENT,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    EmailAddress VARCHAR(100) UNIQUE NOT NULL,
+    PhoneNumber VARCHAR(20),
+    DateOfBirth DATE,
+    RegistrationDate DATE DEFAULT CURRENT_DATE
+);
+
+
+
+
+-- Creation of the Product table
+
+CREATE TABLE Product (
+    ProductID INT PRIMARY KEY AUTO_INCREMENT,
+    ProductName VARCHAR(100) NOT NULL,
+    ProductCategory VARCHAR(50),
+    Price DECIMAL(100, 2) NOT NULL
+);
+
+-- Creation of the transaction table
+CREATE TABLE Transaction (
+    TransactionID INT PRIMARY KEY AUTO_INCREMENT,
+    CustomerID INT,
+    ProductID INT,
+    PurchaseDate DATE,
+    Quantity INT,
+    FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID),
+    FOREIGN KEY (ProductID) REFERENCES Product(ProductID)
+);
+
+
+
+
+-- Creation of the view
+CREATE VIEW CustomerPurchaseSummary AS
+SELECT
+    c.CustomerID,
+    CONCAT(c.FirstName, ' ', c.LastName) AS FullName,
+    SUM(p.Price * t.Quantity) AS TotalAmountSpent
+FROM
+    Customer c
+JOIN Transaction t ON c.CustomerID = t.CustomerID
+JOIN Product p ON t.ProductID = p.ProductID
+GROUP BY
+    c.CustomerID, FullName;
+
+-- Retrieve information from the view
+SELECT * FROM CustomerPurchaseSummary;
+
+
+-- Stored procedure for inserting data into Customer table
+CREATE PROCEDURE InsertCustomer(
+    @CustomerID INT,
+    @FirstName VARCHAR(50),
+    @LastName VARCHAR(50),
+    @EmailAddress VARCHAR(100),
+    @PhoneNumber VARCHAR(20),
+    @DateOfBirth DATE,
+    @RegistrationDate DATE
+)
+AS
+BEGIN
+    INSERT INTO Customer VALUES (@CustomerID, @FirstName, @LastName, @EmailAddress, @PhoneNumber, @DateOfBirth, @RegistrationDate);
+END;
+
+-- Stored procedure for inserting data into Product table
+CREATE PROCEDURE InsertProduct(
+    @ProductID INT,
+    @ProductName VARCHAR(100),
+    @ProductCategory VARCHAR(50),
+    @Price DECIMAL(100, 2)
+)
+AS
+BEGIN
+    INSERT INTO Product VALUES (@ProductID, @ProductName, @ProductCategory, @Price);
+END;
+
+-- Stored procedure for inserting data into Transaction table
+CREATE PROCEDURE InsertTransaction(
+    @TransactionID INT,
+    @CustomerID INT,
+    @ProductID INT,
+    @PurchaseDate DATE,
+    @Quantity INT
+)
+AS
+BEGIN
+    INSERT INTO Transaction VALUES (@TransactionID, @CustomerID, @ProductID, @PurchaseDate, @Quantity);
+END;
+
+
+
+--Demonstrate how to use these procedures to insert sample data into the tables
+
+EXEC InsertCustomer 1, 'Sam', 'Kat', 'sam.kat@email.com', '0556655444', '1970-10-01', '2023-11-22';
+EXEC InsertProduct 1, 'ProductA', 'CategoryA', 5.79;
+EXEC InsertTransaction 1, 1, 1, '2023-05-05', 3;
+
+
+
+CREATE PROCEDURE GenerateDashboardDataset AS
+BEGIN
+    CREATE TABLE DashboardDataset (
+        ProductName VARCHAR(100),
+        TotalRevenue DECIMAL(100, 2),
+        SaleMonth INT,
+        TotalNumberOfSales INT
+    );
+
+    INSERT INTO DashboardDataset
+    SELECT
+        p.ProductName,
+        SUM(p.Price * t.Quantity) AS TotalRevenue,
+        MONTH(t.PurchaseDate) AS SaleMonth,
+        COUNT(*) AS TotalNumberOfSales
+    FROM
+        Transaction t
+    JOIN
+        Product p ON t.ProductID = p.ProductID
+    GROUP BY
+        p.ProductName, MONTH(t.PurchaseDate);
+END;
+
