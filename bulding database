@@ -1,0 +1,58 @@
+-- Création de la base de données
+CREATE DATABASE IF NOT EXISTS MaBaseDeDonnees;
+USE MaBaseDeDonnees;
+
+-- Table des utilisateurs
+CREATE TABLE IF NOT EXISTS Utilisateurs (
+    UtilisateurID INT PRIMARY KEY AUTO_INCREMENT,
+    Nom VARCHAR(50) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    DateInscription DATE NOT NULL
+);
+
+-- Table des articles
+CREATE TABLE IF NOT EXISTS Articles (
+    ArticleID INT PRIMARY KEY AUTO_INCREMENT,
+    NomArticle VARCHAR(100) NOT NULL,
+    Prix DECIMAL(10, 2) NOT NULL
+);
+
+-- Table des commandes
+CREATE TABLE IF NOT EXISTS Commandes (
+    CommandeID INT PRIMARY KEY AUTO_INCREMENT,
+    UtilisateurID INT,
+    ArticleID INT,
+    Quantite INT NOT NULL,
+    PrixTotal DECIMAL(10, 2) NOT NULL,
+    DateCommande DATE NOT NULL,
+    FOREIGN KEY (UtilisateurID) REFERENCES Utilisateurs(UtilisateurID),
+    FOREIGN KEY (ArticleID) REFERENCES Articles(ArticleID)
+);
+
+-- Procédure stockée pour insérer un utilisateur
+DELIMITER //
+CREATE PROCEDURE InsererUtilisateur(
+    IN p_Nom VARCHAR(50),
+    IN p_Email VARCHAR(100),
+    IN p_DateInscription DATE
+)
+BEGIN
+    INSERT INTO Utilisateurs(Nom, Email, DateInscription)
+    VALUES (p_Nom, p_Email, p_DateInscription);
+END //
+DELIMITER ;
+
+-- Procédure stockée pour insérer une commande
+DELIMITER //
+CREATE PROCEDURE InsererCommande(
+    IN p_UtilisateurID INT,
+    IN p_ArticleID INT,
+    IN p_Quantite INT,
+    IN p_PrixTotal DECIMAL(10, 2),
+    IN p_DateCommande DATE
+)
+BEGIN
+    INSERT INTO Commandes(UtilisateurID, ArticleID, Quantite, PrixTotal, DateCommande)
+    VALUES (p_UtilisateurID, p_ArticleID, p_Quantite, p_PrixTotal, p_DateCommande);
+END //
+DELIMITER ;
